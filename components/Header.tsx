@@ -3,17 +3,22 @@ import React from 'react';
 
 const Header: React.FC = () => {
   return (
-    <header className="bg-slate-900 text-white py-8 shadow-lg border-b-4 border-amber-500">
+    <header className="bg-slate-900 text-white py-6 shadow-xl border-b-4 border-amber-600">
       <div className="max-w-4xl mx-auto px-4">
-        <div className="flex items-center space-x-4">
-          <div className="bg-amber-500 p-2 rounded-lg">
-            <svg className="w-8 h-8 text-slate-900" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2L1 21h22L12 2zm0 3.45l8.27 14.3H3.73L12 5.45zM11 15v2h2v-2h-2zm0-6v4h2V9h-2z"/>
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Cebraspe Architect</h1>
-            <p className="text-slate-400 font-light italic">Refinando a cognição para o alto desempenho.</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="bg-amber-600 p-2 rounded shadow-lg">
+              <svg className="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-black tracking-tight uppercase">Cebraspe Architect</h1>
+                <span className="bg-amber-600 text-slate-900 text-[10px] px-1.5 py-0.5 rounded font-black">3.0 EXPRESSO</span>
+              </div>
+              <p className="text-slate-400 text-xs font-medium uppercase tracking-widest opacity-80">Simulador de Imunidade Interpretativa</p>
+            </div>
           </div>
         </div>
       </div>

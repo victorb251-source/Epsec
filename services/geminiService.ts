@@ -1,46 +1,55 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { AssertionRewriteResponse } from "../types";
+import { MicroSimuladoResponse } from "../types";
 
-const SYSTEM_INSTRUCTION = `Você é o "Cebraspe Architect", uma IA especialista na metodologia, estilo linguístico e profundidade teórica da banca examinadora Cebraspe.
-Sua função é gerar 5 (cinco) reescritas de uma assertiva original, mantendo o sentido original (valor de verdade), mas alterando a estrutura sintática, o vocabulário e o foco argumentativo.
+const SYSTEM_INSTRUCTION = `Você é o "Cebraspe Architect 3.0 (Modo Expresso)", especialista sênior na elaboração de itens para concursos de alto nível.
+Sua missão é transformar a assertiva do usuário em um "Micro-Simulado" de 3 itens no estilo Cebraspe.
 
-REGRAS DE OURO:
-1. Vocabulário Cebraspe: Use "prescinde", "imprescinde", "mitigar", "eivar", "óbice", "defeso", "facultado", "preconiza", "conquanto", "não obstante".
-2. Inversões Sintáticas: Altere a ordem direta.
-3. Troca de Voz: Use voz passiva sintética/analítica.
-4. Rigor Jurídico/Técnico: Mantenha terminologia de tribunais superiores ou padrões técnicos.
-5. Imutabilidade Semântica: O julgamento (Certo/Errado) deve ser idêntico ao original.
+PROTOCOLO DE GERAÇÃO:
+1. Análise: Identifique se a assertiva original é CERTA ou ERRADA e o fundamento.
+2. 3 Itens de Simulado:
+   - Misture itens "Espelho" (corretos, vocabulário complexo) e "Armadilha" (erros sutis).
+   - OBRIGATÓRIO: Pelo menos um item Certo e pelo menos um item Errado.
+   - Vocabulário: Use "prescinde", "defeso", "mister", "eivado", "conquanto", "mitiga".
+3. Dissecção: Para cada item, explique por que é C ou E. Se for Errado, aponte a "casca de banana".
+4. Fundamentação: Cite Lei, Súmula ou Doutrina.
 
-Retorne o resultado estritamente em formato JSON seguindo o esquema definido.`;
+A saída deve ser um JSON rigoroso.`;
 
-export const generateRewrites = async (assertion: string): Promise<AssertionRewriteResponse> => {
+export const generateSimulado = async (assertion: string): Promise<MicroSimuladoResponse> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
-    contents: `Assertiva original para reescrita: "${assertion}"`,
+    contents: `Gere um Micro-Simulado para a seguinte assertiva: "${assertion}"`,
     config: {
       systemInstruction: SYSTEM_INSTRUCTION,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          variations: {
+          originalAnalysis: { type: Type.STRING },
+          summary: { type: Type.STRING },
+          items: {
             type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: "Cinco variações da assertiva original no estilo Cebraspe."
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                id: { type: Type.INTEGER },
+                text: { type: Type.STRING },
+                correctJudgement: { type: Type.STRING, description: "'C' ou 'E'" },
+                dissection: { type: Type.STRING }
+              },
+              required: ["id", "text", "correctJudgement", "dissection"]
+            }
           },
-          examinerNote: {
-            type: Type.STRING,
-            description: "Nota explicativa detalhando os termos e estruturas alterados para dificultar a interpretação."
-          }
+          legalBasis: { type: Type.STRING }
         },
-        required: ["variations", "examinerNote"]
+        required: ["originalAnalysis", "summary", "items", "legalBasis"]
       }
     }
   });
 
   const jsonStr = response.text?.trim() || "{}";
-  return JSON.parse(jsonStr) as AssertionRewriteResponse;
+  return JSON.parse(jsonStr) as MicroSimuladoResponse;
 };

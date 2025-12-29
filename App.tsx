@@ -1,182 +1,194 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import Header from './components/Header';
-import RewriteCard from './components/RewriteCard';
-import { HistoryItem, AssertionRewriteResponse } from './types';
-import { generateRewrites } from './services/geminiService';
+import { MicroSimuladoResponse, UserAnswers, Judgement } from './types';
+import { generateSimulado } from './services/geminiService';
 
 const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [currentResult, setCurrentResult] = useState<AssertionRewriteResponse | null>(null);
+  const [currentSimulado, setCurrentSimulado] = useState<MicroSimuladoResponse | null>(null);
+  const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
+  const [showGabarito, setShowGabarito] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load history from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('cebraspe_history');
-    if (saved) {
-      try {
-        setHistory(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to load history", e);
-      }
-    }
-  }, []);
-
-  // Save history to localStorage
-  useEffect(() => {
-    localStorage.setItem('cebraspe_history', JSON.stringify(history));
-  }, [history]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const startChallenge = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
     setLoading(true);
     setError(null);
+    setShowGabarito(false);
+    setUserAnswers({});
     
     try {
-      const result = await generateRewrites(input);
-      setCurrentResult(result);
-      
-      const newItem: HistoryItem = {
-        id: crypto.randomUUID(),
-        original: input,
-        rewrites: result,
-        timestamp: Date.now()
-      };
-      
-      setHistory(prev => [newItem, ...prev].slice(0, 10)); // Keep last 10
+      const result = await generateSimulado(input);
+      setCurrentSimulado(result);
     } catch (err: any) {
-      console.error(err);
-      setError("Ocorreu um erro ao processar sua solicitação. Verifique sua conexão ou tente novamente mais tarde.");
+      setError("Falha na engenharia do simulado. Tente uma assertiva mais clara.");
     } finally {
       setLoading(false);
     }
   };
 
-  const clearHistory = () => {
-    setHistory([]);
-    setCurrentResult(null);
-    setInput('');
+  const handleJudgement = (itemId: number, judgement: Judgement) => {
+    if (showGabarito) return;
+    setUserAnswers(prev => ({ ...prev, [itemId]: judgement }));
+  };
+
+  const revealGabarito = () => {
+    if (Object.keys(userAnswers).length < 3) {
+      if (!confirm("Você não julgou todos os itens. Deseja ver o gabarito mesmo assim?")) return;
+    }
+    setShowGabarito(true);
+  };
+
+  const calculateScore = () => {
+    if (!currentSimulado) return 0;
+    return currentSimulado.items.reduce((score, item) => {
+      const userAns = userAnswers[item.id];
+      if (!userAns) return score;
+      return userAns === item.correctJudgement ? score + 1 : score - 1;
+    }, 0);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
       <Header />
 
-      <main className="flex-grow max-w-4xl w-full mx-auto p-4 md:p-8 space-y-8">
-        {/* Input Section */}
-        <section className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
-          <label className="block text-slate-700 font-bold mb-4 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-            </svg>
-            Assertiva para Refinamento
-          </label>
-          <form onSubmit={handleSubmit}>
+      <main className="flex-grow max-w-3xl w-full mx-auto p-4 md:p-8 space-y-8">
+        {/* Input Phase */}
+        <section className={`bg-white p-6 rounded-2xl shadow-lg border border-slate-200 transition-opacity ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+          <h2 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-4 flex items-center">
+            <span className="w-2 h-2 bg-amber-600 rounded-full mr-2"></span>
+            Alimentar Sistema (Assertiva Original)
+          </h2>
+          <form onSubmit={startChallenge}>
             <textarea
-              className="w-full h-32 p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all font-medium text-slate-800 resize-none bg-slate-50"
-              placeholder="Ex: 'É vedada a acumulação remunerada de cargos públicos, exceto, quando houver compatibilidade de horários, a de dois cargos de professor.'"
+              className="w-full h-24 p-4 border border-slate-200 rounded-xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-600 outline-none transition-all font-medium text-slate-800 bg-slate-50 resize-none"
+              placeholder="Ex: No crime de peculato, a reparação do dano, se precede à sentença irrecorrível, extingue a punibilidade."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={loading}
             />
-            <div className="mt-4 flex flex-col sm:flex-row gap-3">
-              <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className={`flex-1 py-3 px-6 rounded-lg font-bold text-white transition-all transform active:scale-95 flex items-center justify-center space-x-2 ${
-                  loading || !input.trim() 
-                  ? 'bg-slate-400 cursor-not-allowed' 
-                  : 'bg-amber-600 hover:bg-amber-700 shadow-lg hover:shadow-amber-200'
-                }`}
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5 mr-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Refinando Assertiva...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    <span>Mimetizar Estilo Cebraspe</span>
-                  </>
-                )}
-              </button>
-              {history.length > 0 && (
-                <button
-                  type="button"
-                  onClick={clearHistory}
-                  className="py-3 px-6 rounded-lg font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors border border-slate-200"
-                >
-                  Limpar Tudo
-                </button>
-              )}
-            </div>
+            <button
+              type="submit"
+              disabled={loading || !input.trim()}
+              className="w-full mt-4 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center space-x-2 transition-all shadow-xl active:scale-[0.98]"
+            >
+              {loading ? (
+                <span className="flex items-center animate-pulse"><svg className="animate-spin h-4 w-4 mr-2 text-amber-500" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> GERANDO MICRO-SIMULADO...</span>
+              ) : "GERAR DESAFIO 3.0"}
+            </button>
           </form>
         </section>
 
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 text-red-700 rounded-md">
-            <p className="font-bold">Atenção</p>
-            <p>{error}</p>
+          <div className="p-4 bg-red-100 border-l-4 border-red-600 text-red-800 rounded font-bold text-sm animate-bounce">
+            {error}
           </div>
         )}
 
-        {/* Results Section */}
-        {currentResult && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* Phase 1: O Desafio */}
+        {currentSimulado && (
+          <div className="space-y-6 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-800">Variações Estratégicas</h2>
-              <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded font-bold uppercase tracking-wider">Altamente Sofisticado</span>
-            </div>
-            
-            <div className="space-y-4">
-              {currentResult.variations.map((v, i) => (
-                <RewriteCard key={i} index={i + 1} text={v} />
-              ))}
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">FASE 1: O DESAFIO</h3>
+              {showGabarito && (
+                <div className="bg-slate-900 text-white px-3 py-1 rounded-full text-xs font-black">
+                  SCORE: {calculateScore()} {calculateScore() === 1 ? 'PONTO' : 'PONTOS'}
+                </div>
+              )}
             </div>
 
-            <div className="bg-slate-800 text-slate-200 p-6 rounded-xl border border-slate-700 shadow-inner">
-              <h3 className="text-amber-400 font-bold mb-3 flex items-center uppercase tracking-widest text-sm">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-                Nota do Examinador
-              </h3>
-              <p className="text-slate-300 leading-relaxed italic">
-                {currentResult.examinerNote}
-              </p>
+            <div className="space-y-4">
+              {currentSimulado.items.map((item, idx) => {
+                const isCorrect = userAnswers[item.id] === item.correctJudgement;
+                return (
+                  <div key={item.id} className={`bg-white p-6 rounded-2xl border-2 transition-all shadow-sm ${showGabarito ? (isCorrect ? 'border-emerald-500 bg-emerald-50/30' : 'border-rose-500 bg-rose-50/30') : 'border-slate-100 hover:border-amber-200'}`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="text-[10px] font-black text-slate-400 tracking-widest uppercase">ITEM {idx + 1}</span>
+                      <div className="flex gap-2">
+                        {(['C', 'E'] as Judgement[]).map((j) => (
+                          <button
+                            key={j}
+                            onClick={() => handleJudgement(item.id, j)}
+                            disabled={showGabarito}
+                            className={`w-10 h-10 rounded-lg font-black text-sm transition-all border-2 ${
+                              userAnswers[item.id] === j 
+                                ? (j === 'C' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-rose-600 border-rose-600 text-white')
+                                : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'
+                            } ${showGabarito && item.correctJudgement === j ? 'ring-4 ring-amber-400 ring-offset-2 scale-110' : ''}`}
+                          >
+                            {j}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-slate-800 font-medium leading-relaxed">
+                      {item.text}
+                    </p>
+
+                    {/* Phase 2: Dissecção */}
+                    {showGabarito && (
+                      <div className="mt-6 pt-6 border-t border-slate-200 animate-in fade-in duration-700">
+                        <div className="flex items-center mb-2">
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded mr-2 ${item.correctJudgement === 'C' ? 'bg-emerald-200 text-emerald-800' : 'bg-rose-200 text-rose-800'}`}>
+                            GABARITO: {item.correctJudgement === 'C' ? 'CERTO' : 'ERRADO'}
+                          </span>
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">Dissecção Técnica</span>
+                        </div>
+                        <p className="text-slate-600 text-sm italic leading-relaxed">
+                          {item.dissection}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+
+            {!showGabarito ? (
+              <button
+                onClick={revealGabarito}
+                className="w-full py-5 bg-amber-600 hover:bg-amber-700 text-slate-900 rounded-2xl font-black uppercase tracking-[0.2em] shadow-lg transition-all"
+              >
+                FINALIZAR E VER GABARITO (FASE 2)
+              </button>
+            ) : (
+              <div className="bg-slate-900 text-white p-8 rounded-2xl border-t-8 border-amber-600 space-y-4">
+                <div>
+                  <h4 className="text-amber-500 font-black text-xs uppercase tracking-widest mb-1">FUNDAMENTAÇÃO E FONTE</h4>
+                  <p className="text-xl font-serif italic text-slate-100">{currentSimulado.legalBasis}</p>
+                </div>
+                <div className="pt-4 border-t border-slate-700">
+                  <h4 className="text-amber-500 font-black text-xs uppercase tracking-widest mb-1">ANÁLISE DO NÚCLEO</h4>
+                  <p className="text-slate-400 text-sm">{currentSimulado.originalAnalysis}</p>
+                </div>
+                <button 
+                   onClick={() => { setCurrentSimulado(null); setInput(''); }}
+                   className="mt-4 w-full py-3 border border-slate-700 hover:bg-slate-800 text-slate-400 rounded-xl text-xs font-black uppercase tracking-widest"
+                >
+                  NOVO SIMULADO
+                </button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Empty State */}
-        {!currentResult && !loading && !error && (
-          <div className="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300">
-            <div className="text-slate-300 mb-4 flex justify-center">
-              <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-            </div>
-            <h3 className="text-slate-500 font-medium text-lg">Pronto para a reconstrução textual.</h3>
-            <p className="text-slate-400">Insira uma assertiva acima para começar o treinamento de flexibilidade cognitiva.</p>
+        {!currentSimulado && !loading && (
+          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300 opacity-60">
+             <svg className="w-16 h-16 mx-auto mb-4 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+             </svg>
+             <h3 className="text-slate-400 font-bold uppercase tracking-widest text-sm">Aguardando Protocolo de Início</h3>
+             <p className="text-slate-300 text-xs mt-2">Insira uma assertiva para ativar o Modo Expresso 3.0</p>
           </div>
         )}
       </main>
 
-      <footer className="bg-slate-100 py-8 border-t border-slate-200 mt-auto">
-        <div className="max-w-4xl mx-auto px-4 text-center text-slate-500 text-sm">
-          <p>© {new Date().getFullYear()} Cebraspe Architect. Uso estritamente educacional.</p>
-          <p className="mt-2 font-light">"A interpretação precede o conhecimento."</p>
-        </div>
+      <footer className="py-10 text-center opacity-40">
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Cebraspe Architect 3.0 Mod Expresso</p>
       </footer>
     </div>
   );
