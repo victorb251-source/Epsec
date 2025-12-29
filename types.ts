@@ -6,13 +6,25 @@ export interface SimulatedItem {
   text: string;
   correctJudgement: Judgement;
   dissection: string;
+  taxonomy: string; 
 }
 
-export interface MicroSimuladoResponse {
-  originalAnalysis: string; // C/E logic of input
+export interface Flashcard {
+  theme: string;
   summary: string;
+  venom: string;
+}
+
+export interface Simulado5Response {
+  title: string;
+  crossReference?: string;
+  hypotheticalSituation?: string;
   items: SimulatedItem[];
-  legalBasis: string;
+  flashcard: Flashcard;
+  peripheralRadar: {
+    topic: string;
+    context: string;
+  };
 }
 
 export interface UserAnswers {

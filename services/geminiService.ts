@@ -1,55 +1,87 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { MicroSimuladoResponse } from "../types";
+import { Simulado5Response } from "../types";
 
-const SYSTEM_INSTRUCTION = `Você é o "Cebraspe Architect 3.0 (Modo Expresso)", especialista sênior na elaboração de itens para concursos de alto nível.
-Sua missão é transformar a assertiva do usuário em um "Micro-Simulado" de 3 itens no estilo Cebraspe.
+const SYSTEM_INSTRUCTION = `Você é o "Cebraspe Architect 5.3 Elite", especialista em engenharia reversa de itens da banca Cebraspe.
 
-PROTOCOLO DE GERAÇÃO:
-1. Análise: Identifique se a assertiva original é CERTA ou ERRADA e o fundamento.
-2. 3 Itens de Simulado:
-   - Misture itens "Espelho" (corretos, vocabulário complexo) e "Armadilha" (erros sutis).
-   - OBRIGATÓRIO: Pelo menos um item Certo e pelo menos um item Errado.
-   - Vocabulário: Use "prescinde", "defeso", "mister", "eivado", "conquanto", "mitiga".
-3. Dissecção: Para cada item, explique por que é C ou E. Se for Errado, aponte a "casca de banana".
-4. Fundamentação: Cite Lei, Súmula ou Doutrina.
+[PROTOCOLO DE CONCISÃO E SINTAXE CEBRASPE]
 
-A saída deve ser um JSON rigoroso.`;
+1. REGRA DE EXTENSÃO: Cada item deve ser direto e técnico, com no máximo 3 a 4 linhas (30 a 50 palavras). Proibido parágrafos explicativos ou storytelling dentro do item.
+2. ESTRUTURA: Sujeito + Verbo + Complementos. Use inversões sintáticas e orações subordinadas para densidade técnica.
+3. CONDENSAÇÃO: Evite linguajar prolixo. Use termos como "prescinde", "defeso", "mister", "conquanto". 
+4. SITUAÇÃO HIPOTÉTICA: Se o tema exigir um caso prático, gere um texto curto (campo 'hypotheticalSituation') separado. Os itens devem referir-se a essa situação ou ao conceito técnico.
 
-export const generateSimulado = async (assertion: string): Promise<MicroSimuladoResponse> => {
+[DIRETRIZES DE CALIBRAGEM 2024-2025]
+- Inferência: Exija que o usuário julgue a consequência de uma aplicação.
+- Troca de Conceitos Adjacentes: Erros baseados em descrever um conceito corretamente mas nomeá-lo errado.
+- Implementação vs. Conceito: Não confunda limitações de ferramentas com limitações teóricas.
+
+FASE 1 (GERAÇÃO):
+- 3 Itens (C/E) mistos.
+- Itens curtos, densos e desafiadores.
+
+FASE 2 (DIAGNÓSTICO):
+- Taxonomia técnica (Troca de Conceitos, Restrição Indevida, etc.).
+- Flashcard de Ouro e Radar Periférico.
+
+Retorne rigorosamente JSON.`;
+
+export const generateSimulado5 = async (prompt: string, context?: string): Promise<Simulado5Response> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
+  const contents = context 
+    ? `Trilha: ${context}. Tema atual: "${prompt}". Aplique Protocolo de Concisão 5.3.`
+    : `Inicie 5.3 Elite para: "${prompt}"`;
+
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
-    contents: `Gere um Micro-Simulado para a seguinte assertiva: "${assertion}"`,
+    contents: contents,
     config: {
       systemInstruction: SYSTEM_INSTRUCTION,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          originalAnalysis: { type: Type.STRING },
-          summary: { type: Type.STRING },
+          title: { type: Type.STRING, description: "Título: 📝 Simulado Elite: [Tema]" },
+          crossReference: { type: Type.STRING },
+          hypotheticalSituation: { type: Type.STRING, description: "Situação hipotética curta, se necessária para o tema." },
           items: {
             type: Type.ARRAY,
             items: {
               type: Type.OBJECT,
               properties: {
                 id: { type: Type.INTEGER },
-                text: { type: Type.STRING },
-                correctJudgement: { type: Type.STRING, description: "'C' ou 'E'" },
-                dissection: { type: Type.STRING }
+                text: { type: Type.STRING, description: "Assertiva curta (30-50 palavras)." },
+                correctJudgement: { type: Type.STRING },
+                dissection: { type: Type.STRING },
+                taxonomy: { type: Type.STRING }
               },
-              required: ["id", "text", "correctJudgement", "dissection"]
+              required: ["id", "text", "correctJudgement", "dissection", "taxonomy"]
             }
           },
-          legalBasis: { type: Type.STRING }
+          flashcard: {
+            type: Type.OBJECT,
+            properties: {
+              theme: { type: Type.STRING },
+              summary: { type: Type.STRING },
+              venom: { type: Type.STRING }
+            },
+            required: ["theme", "summary", "venom"]
+          },
+          peripheralRadar: {
+            type: Type.OBJECT,
+            properties: {
+              topic: { type: Type.STRING },
+              context: { type: Type.STRING }
+            },
+            required: ["topic", "context"]
+          }
         },
-        required: ["originalAnalysis", "summary", "items", "legalBasis"]
+        required: ["title", "items", "flashcard", "peripheralRadar"]
       }
     }
   });
 
   const jsonStr = response.text?.trim() || "{}";
-  return JSON.parse(jsonStr) as MicroSimuladoResponse;
+  return JSON.parse(jsonStr) as Simulado5Response;
 };
