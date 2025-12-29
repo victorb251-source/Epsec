@@ -2,36 +2,33 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Simulado5Response } from "../types";
 
-const SYSTEM_INSTRUCTION = `Você é o "Cebraspe Architect 5.3 Elite", especialista em engenharia reversa de itens da banca Cebraspe.
+const SYSTEM_INSTRUCTION = `Você é o "Cebraspe Architect 5.4 Elite", especialista em engenharia reversa de itens da banca Cebraspe.
 
-[PROTOCOLO DE CONCISÃO E SINTAXE CEBRASPE]
+[PROTOCOLO DE NATURALIDADE TÉCNICA E PRECISÃO]
 
-1. REGRA DE EXTENSÃO: Cada item deve ser direto e técnico, com no máximo 3 a 4 linhas (30 a 50 palavras). Proibido parágrafos explicativos ou storytelling dentro do item.
-2. ESTRUTURA: Sujeito + Verbo + Complementos. Use inversões sintáticas e orações subordinadas para densidade técnica.
-3. CONDENSAÇÃO: Evite linguajar prolixo. Use termos como "prescinde", "defeso", "mister", "conquanto". 
-4. SITUAÇÃO HIPOTÉTICA: Se o tema exigir um caso prático, gere um texto curto (campo 'hypotheticalSituation') separado. Os itens devem referir-se a essa situação ou ao conceito técnico.
+1. TOM E ESTILO: Utilize a norma culta padrão, impessoal e direta, mimetizando manuais técnicos ou textos jurídicos modernos.
+2. ANTI-CARICATURA: Evite o uso forçado de termos arcaicos ou rebuscados (como "impende", "mister", "conquanto", "eivado", "destarte"). Use-os com extrema parcimônia (máximo de 1 termo desse tipo a cada 3 itens).
+3. COMPLEXIDADE LÓGICA: A dificuldade deve advir do conceito técnico ou da lógica da frase (ex: inversões, ressalvas), e não da obscuridade das palavras.
+4. VOCABULÁRIO OPERADOR: Utilize palavras como "prescinde", "independe", "ressalvado", "mitigar" apenas quando funcionarem como operadores lógicos que alteram o sentido técnico da assertiva.
+
+[PROTOCOLO DE CONCISÃO]
+1. EXTENSÃO: Cada item deve ter no máximo 3 a 4 linhas (30 a 50 palavras).
+2. ESTRUTURA: Sujeito + Verbo + Complementos. Evite storytelling longo.
+3. SITUAÇÃO HIPOTÉTICA: Se necessária, use o campo 'hypotheticalSituation' separadamente.
 
 [DIRETRIZES DE CALIBRAGEM 2024-2025]
-- Inferência: Exija que o usuário julgue a consequência de uma aplicação.
-- Troca de Conceitos Adjacentes: Erros baseados em descrever um conceito corretamente mas nomeá-lo errado.
-- Implementação vs. Conceito: Não confunda limitações de ferramentas com limitações teóricas.
+- Inferência: Julgamento da consequência de uma aplicação prática.
+- Troca de Conceitos Adjacentes: Erros baseados em descrições corretas com nomes errados.
+- Implementação vs. Conceito: Diferenciação entre limites de ferramentas e limites teóricos.
 
-FASE 1 (GERAÇÃO):
-- 3 Itens (C/E) mistos.
-- Itens curtos, densos e desafiadores.
-
-FASE 2 (DIAGNÓSTICO):
-- Taxonomia técnica (Troca de Conceitos, Restrição Indevida, etc.).
-- Flashcard de Ouro e Radar Periférico.
-
-Retorne rigorosamente JSON.`;
+Retorne rigorosamente JSON seguindo o esquema definido.`;
 
 export const generateSimulado5 = async (prompt: string, context?: string): Promise<Simulado5Response> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const contents = context 
-    ? `Trilha: ${context}. Tema atual: "${prompt}". Aplique Protocolo de Concisão 5.3.`
-    : `Inicie 5.3 Elite para: "${prompt}"`;
+    ? `Trilha: ${context}. Tema atual: "${prompt}". Aplique Protocolo de Naturalidade Técnica 5.4.`
+    : `Inicie 5.4 Elite para: "${prompt}"`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
@@ -44,14 +41,14 @@ export const generateSimulado5 = async (prompt: string, context?: string): Promi
         properties: {
           title: { type: Type.STRING, description: "Título: 📝 Simulado Elite: [Tema]" },
           crossReference: { type: Type.STRING },
-          hypotheticalSituation: { type: Type.STRING, description: "Situação hipotética curta, se necessária para o tema." },
+          hypotheticalSituation: { type: Type.STRING, description: "Situação hipotética curta, se necessária." },
           items: {
             type: Type.ARRAY,
             items: {
               type: Type.OBJECT,
               properties: {
                 id: { type: Type.INTEGER },
-                text: { type: Type.STRING, description: "Assertiva curta (30-50 palavras)." },
+                text: { type: Type.STRING, description: "Assertiva técnica e natural (30-50 palavras)." },
                 correctJudgement: { type: Type.STRING },
                 dissection: { type: Type.STRING },
                 taxonomy: { type: Type.STRING }

@@ -46,7 +46,7 @@ const App: React.FC = () => {
       setInput('');
       if (e) window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      setError("Falha no Motor 5.3. A calibração de concisão foi interrompida.");
+      setError("Falha no Motor 5.4. A calibração de naturalidade técnica foi interrompida.");
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ const App: React.FC = () => {
 
   const revealDiagnosis = () => {
     if (Object.keys(userAnswers).length < 3) {
-      if (!confirm("O diagnóstico 5.3 exige a simulação completa para mapear o perfil interpretativo. Deseja prosseguir?")) return;
+      if (!confirm("O diagnóstico 5.4 exige a simulação completa para mapear o perfil interpretativo. Deseja prosseguir?")) return;
     }
     setShowGabarito(true);
   };
@@ -82,7 +82,7 @@ const App: React.FC = () => {
         <section className={`bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 transition-all ${loading ? 'opacity-50 blur-[1px] pointer-events-none' : 'opacity-100'}`}>
           <div className="flex items-center gap-3 mb-6">
             <div className="w-2 h-6 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div>
-            <h2 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.4em]">Controle 5.3 (Concisão)</h2>
+            <h2 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.4em]">Controle 5.4 (Naturalidade)</h2>
           </div>
           <form onSubmit={handleSubmit}>
             <textarea
@@ -98,7 +98,7 @@ const App: React.FC = () => {
                 disabled={loading || !input.trim()}
                 className="w-full py-5 bg-slate-950 hover:bg-slate-900 text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center space-x-3 transition-all shadow-xl active:scale-[0.98] border border-slate-800"
               >
-                {loading ? "Processando Bateria..." : "Ativar Motor Elite 5.3"}
+                {loading ? "Processando Bateria..." : "Ativar Motor Elite 5.4"}
               </button>
             </div>
           </form>
@@ -214,7 +214,7 @@ const App: React.FC = () => {
                   onClick={revealDiagnosis}
                   className="w-full py-6 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-[2.5rem] font-black uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-[0.98] text-[11px] border-2 border-amber-600/20"
                 >
-                  Processar Diagnóstico 5.3
+                  Processar Diagnóstico 5.4
                 </button>
               </div>
             ) : (
@@ -244,7 +244,7 @@ const App: React.FC = () => {
                    </div>
                 </div>
 
-                {/* Radar 5.3 */}
+                {/* Radar 5.4 */}
                 <div className="bg-white border-2 border-slate-100 p-10 rounded-[3.5rem] shadow-xl">
                    <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
                      <div className="bg-amber-100 p-5 rounded-[1.5rem] text-amber-600 shrink-0">
@@ -253,7 +253,7 @@ const App: React.FC = () => {
                         </svg>
                      </div>
                      <div>
-                        <h4 className="text-slate-400 font-black text-[10px] uppercase tracking-[0.4em] mb-2 text-center md:text-left">📡 Expansão de Contexto (Radar 5.3)</h4>
+                        <h4 className="text-slate-400 font-black text-[10px] uppercase tracking-[0.4em] mb-2 text-center md:text-left">📡 Expansão de Contexto (Radar 5.4)</h4>
                         <p className="text-slate-800 font-bold text-lg leading-relaxed text-center md:text-left">{currentResult.peripheralRadar.context}</p>
                      </div>
                    </div>
@@ -291,9 +291,9 @@ const App: React.FC = () => {
                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                 </svg>
              </div>
-             <h3 className="text-slate-950 font-black uppercase tracking-[0.5em] text-sm italic font-serif mb-4">Motor 5.3 Elite Standby</h3>
+             <h3 className="text-slate-950 font-black uppercase tracking-[0.5em] text-sm italic font-serif mb-4">Motor 5.4 Elite Standby</h3>
              <p className="text-slate-400 text-xs font-medium max-w-sm mx-auto italic leading-relaxed">
-               "A concisão é a alma da interpretação de elite."
+               "A naturalidade técnica é a alma da interpretação de elite."
              </p>
           </div>
         )}

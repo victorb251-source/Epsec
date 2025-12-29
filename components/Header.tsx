@@ -15,9 +15,9 @@ const Header: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-black tracking-tighter uppercase font-serif italic">Cebraspe Architect</h1>
-                <span className="bg-amber-600 text-slate-950 text-[9px] px-2 py-0.5 rounded-sm font-black animate-pulse">5.3 ELITE</span>
+                <span className="bg-amber-600 text-slate-950 text-[9px] px-2 py-0.5 rounded-sm font-black animate-pulse">5.4 ELITE</span>
               </div>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] opacity-80 mt-0.5">Protocolo de Concisão & Inferência</p>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.4em] opacity-80 mt-0.5">Naturalidade Técnica & Precisão</p>
             </div>
           </div>
         </div>
